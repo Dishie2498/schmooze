@@ -13,43 +13,29 @@ import {useRouter} from "next/navigation";
 import { useCollection } from "react-firebase-hooks/firestore";
 import * as EmailValidator from 'email-validator';
 import { doc, setDoc, collection, query, where, getDocs } from "firebase/firestore";
-import { Chat } from '../components/Chat';
+import Chat from '../components/Chat';
+import { userAgent } from 'next/server';
 
 export default function Sidebar() {
     const router = useRouter();
 
     const [user] = useAuthState(auth);
-    console.log(user);
-    // async function fetchData() {
-    //     const chatCollection = collection(db, "chats");
-    //     // // const chatCollection = db.collection("chats");
-    //     const userChatRef = query(chatCollection, where("users", "array-contains", "vdishie@gmail.com"));
-    //     // // const userChatRef = chatCollection.where("users", "array-contains", "vdishie@gmail.com").get();
-    //     // // console.log("userChatRef", userChatRef);
-    //     const chatSnapshot = await getDocs(userChatRef);
-    //     // // const chatSnapshot = useCollection(userChatRef);
-    //     console.log("chatSnapshot", chatSnapshot.docs);
-    //     // const userRef = firestore().collection('chats').doc('xyz@gmail.com');
-    
-    //     // console.log(db.collection('chats').doc('xyz@gmail.com'));
-    // }
-    //////////////////////////// 2 /////////////////////////////////
-    // async function fetchData() {
-    //     const chatCollection = collection(db, "chats");
-    //     const userChatRef = query(chatCollection, where("users", "array-contains", "vdishie@gmail.com"));
-    //     const chatSnapshot = await getDocs(userChatRef);
-    //     console.log("chatSnapshot", chatSnapshot);
-    //     return chatSnapshot;
-    // }
-    // useEffect(() => {
-    //     (async () => {
-    //       chatSnapshot = await fetchData();  
-    //     })();
-    //   }, [user]);
-   
-    useEffect(()=>{
-        fetchPost();
+
+    const [userData, setUserData] = useState("");
+
+    const fetchData = async () => {
+        await getDocs(collection(db, "chats"), where("users", "array-contains", user))
+        .then((querySnapshot) => {
+            const newData = querySnapshot.docs.map((doc) => ({...doc.data(), id:doc.id}));
+            setUserData(newData);
+            return newData;
+        })
+    } 
+    let chatSnapshot;
+    useEffect(() => {
+        chatSnapshot = fetchData();
     }, [])
+   
     
     const signingOut= () => {
         signOut(auth);
@@ -73,6 +59,14 @@ export default function Sidebar() {
         }
 
     }
+    let recipientArray = [];
+    // console.log(userData);
+    for(let i=0; i<userData.length; i++)
+    {
+        recipientArray.push(userData[i]["id"]);
+    }
+    // console.log("recipientArray",recipientArray);
+
     return (
         <Container>
             {/* Part 1 - Topmost panel */}
@@ -97,16 +91,10 @@ export default function Sidebar() {
             </SidebarButton>
 
             {/* Part 4 - List of chats */}
-            {/* {chatSnapshot?.map((chat) => (
-                // <Chat key = {chat.id} id = {chat.id} user = {chat.data().users} />
-                <p>data</p>
-                )
-            )
-            } */}
-            {/* {chatSnapshot.forEach((doc) => {
-                console.log(doc.id, " => ", doc.data());
-                })
-                } */}
+            {recipientArray.map((email) => (
+                // <p>{email}</p>
+                <Chat key={email} email={email} sender={user} />
+            ))}
         </Container>
     )
 }
@@ -162,3 +150,8 @@ width: 100%;
 background-color: pink;
 `;
 
+
+{/* {chatSnapshot.forEach((doc) => {
+    console.log(doc.id, " => ", doc.data());
+    })
+    } */}
