@@ -7,16 +7,33 @@ import { Avatar, Icon, IconButton } from "@mui/material";
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
 import { useCollection } from "react-firebase-hooks/firestore";
-import { doc, setDoc, collection, query, where, getDocs, orderBy, onSnapshot } from "firebase/firestore";
+import { doc, setDoc, collection, query, where, getDocs, orderBy, onSnapshot, getDoc } from "firebase/firestore";
 import { Message } from "@mui/icons-material";
 
 
 export default function ChatScreen({ chat, messages }) {
     const [user] = useAuthState(auth);
     const router = useRouter();
+    const [userData, setUserData] = useState(null);
+    const [chatData, setChatData] = useState(null);
+
+
+
+    const fetchData = async (email) => {
+        const querySnapshot = await getDocs(collection(db, "chats"), where("users", "array-contains", email));
+        querySnapshot.forEach((doc) => {
+
+            if(doc.id === email) {
+                setChatData(doc.data()?.messages || []);
+                console.log("chatData", doc.data().messages);
+            }
+
+
+        });
+        
+    } 
+
     
-    console.log("messagesSnapshot" ,messagesSnapshot.docs );
-    const [messagesSnapshot] = useCollection(collection(db, "chats").doc(router.query.id).collection('messages').orderBy('timestamp', 'ascending'));
     const showMessages = () => {
         if(messagesSnapshot) {
             return messagesSnapshot.docs.map(message => (
@@ -30,6 +47,13 @@ export default function ChatScreen({ chat, messages }) {
                 />
             ))
     }}
+
+    useEffect(() => {
+        const email = window.location.href.split("/chat/")[1];
+        fetchData(email);
+    }, [])
+
+
     return (
         <Container>
             <Header>
