@@ -1,0 +1,5 @@
+# git ignore for nextjs
+/node_modules
+/.next
+/.vscode
+
